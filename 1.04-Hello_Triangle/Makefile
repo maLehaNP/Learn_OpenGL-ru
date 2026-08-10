@@ -1,3 +1,3 @@
-all: main.cpp
-	gcc -o main main.cpp -lglfw -lGLEW -lGL -lstdc++
+all: src/main.cpp
+	gcc -o main src/main.cpp -lglfw -lGLEW -lGL -lstdc++
 
