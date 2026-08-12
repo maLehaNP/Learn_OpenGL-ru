@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <math.h>
+#include <shader.h>
 
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action,
@@ -40,11 +41,6 @@ int main(int argc, char *argv[]) {
   std::cout << "Maximum texture size supported: " << nrAttributes << std::endl;
 
   // Вершины треугольника
-  //GLfloat vertices[] = {
-  //  -0.5f, -0.5f, 0.0f,
-  //   0.5f, -0.5f, 0.0f,
-  //  -0.0f,  0.5f, 0.0f
-  //};
   GLfloat vertices[] = {
     // Позиции          // Цвета
     -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
@@ -76,65 +72,19 @@ int main(int argc, char *argv[]) {
       "  gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
       "  ourColor = color;\n"
       "}\0";
-  GLuint vertexShader;
-  vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  // Привязываем исх. код
-  glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-  // Компилируем шейдер
-  glCompileShader(vertexShader);
-
-  // Проверка успешности сборки шейдера
-  GLint success;
-  GLchar infoLog[512];
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-              << infoLog << std::endl;
-  }
-
   const char *fragmentShaderSource =
       "#version 330 core\n"
       "out vec4 color;\n"
-      //"uniform vec4 ourColor; // Мы устанавливаем значение этой переменной в коде OpenGL.\n"
       "in vec3 ourColor;\n"
       "void main()\n"
       "{\n"
-      //"  color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-      //"  color = ourColor;\n"
       "  color = vec4(ourColor, 1.0f);\n"
       "}\0";
-  GLuint fragmentShader;
-  fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-  glCompileShader(fragmentShader);
-  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
-              << infoLog << std::endl;
-  }
   //----------------------------------------------------------------------------
 
   // Шейдерная программа (Shader Program)
   //-------------------------------------
-  GLuint shaderProgram;
-  shaderProgram = glCreateProgram();
-  // Присоединяем шейдеры
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
-  // Связываем
-  glLinkProgram(shaderProgram);
-
-  glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-  if (!success) {
-    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-    std::cout << "ERROR::SHADER_PROGRAM::LINK_FAILED\n" << infoLog << std::endl;
-  }
-
-  // Удаляем шейдеры
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
+  Shader shader(vertexShaderSource, fragmentShaderSource);
   //-------------------------------------
 
   // Vertex Array Object
@@ -187,12 +137,14 @@ int main(int argc, char *argv[]) {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(shaderProgram);
+    //glUseProgram(shaderProgram);
+    shader.use();
 
     // Обновляем цвет формы
     GLfloat timeValue = glfwGetTime();
     GLfloat greenValue = (std::sin(timeValue) / 2) + 0.5;
-    GLint vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+    //GLint vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+    GLint vertexColorLocation = glGetUniformLocation(shader.program, "ourColor");
     glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
     // Отрисовываем треугольник
