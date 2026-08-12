@@ -59,33 +59,7 @@ int main(int argc, char *argv[]) {
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
   //---------------------
 
-  // Шейдеры
-  //----------------------------------------------------------------------------
-  // Исходный код GLSL
-  const char *vertexShaderSource =
-      "#version 330 core\n"
-      "layout (location = 0) in vec3 position;\n"
-      "layout (location = 1) in vec3 color;\n"
-      "out vec3 ourColor;"
-      "void main()\n"
-      "{\n"
-      "  gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
-      "  ourColor = color;\n"
-      "}\0";
-  const char *fragmentShaderSource =
-      "#version 330 core\n"
-      "out vec4 color;\n"
-      "in vec3 ourColor;\n"
-      "void main()\n"
-      "{\n"
-      "  color = vec4(ourColor, 1.0f);\n"
-      "}\0";
-  //----------------------------------------------------------------------------
-
-  // Шейдерная программа (Shader Program)
-  //-------------------------------------
-  Shader shader(vertexShaderSource, fragmentShaderSource);
-  //-------------------------------------
+  Shader shader("shaders/shader.vert", "shaders/shader.frag");
 
   // Vertex Array Object
   //--------------------
@@ -116,19 +90,19 @@ int main(int argc, char *argv[]) {
 
   // Игровой цикл
   while (!glfwWindowShouldClose(window)) {
-    double curr_s     = glfwGetTime();   // Get the current time.
-	  double elapsed_s  = curr_s - prev_s; // Work out the time elapsed over the last frame.
-	  prev_s            = curr_s;          // Set the 'previous time' for the next frame to use.
+    double curr_s     = glfwGetTime();    // Get the current time.
+	  double elapsed_s  = curr_s - prev_s;  // Work out the time elapsed over the last frame.
+	  prev_s            = curr_s;           // Set the 'previous time' for the next frame to use.
 
     // Print the FPS, but not every frame, so it doesn't flicker too much.
 	  title_countdown_s -= elapsed_s;
-	  if ( title_countdown_s <= 0.0 && elapsed_s > 0.0 ) {
-	  	double fps        = 1.0 / elapsed_s;
+	  if (title_countdown_s <= 0.0 && elapsed_s > 0.0) {
+	  	double fps = 1.0 / elapsed_s;
 
 	  	// Create a string and put the FPS as the window title.
 	  	char tmp[256];
-	  	sprintf( tmp, "FPS %.2lf", fps );
-	  	glfwSetWindowTitle(window, tmp );
+	  	sprintf(tmp, "FPS: %.2lf | Frame Time: %.2f ms", fps, elapsed_s * 1e3);
+	  	glfwSetWindowTitle(window, tmp);
 	  	title_countdown_s = 0.1;
 	  }
 
@@ -180,7 +154,7 @@ int init() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-  glfwWindowHint(GLFW_SAMPLES, 8);  // MSAA
+  glfwWindowHint(GLFW_SAMPLES, 4);  // MSAA
 
   return 1;
 }

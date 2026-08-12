@@ -6,12 +6,13 @@
 
 class Shader {
 public:
-  //Shader(const char* vertexPath, const char* fragmentPath);
-  Shader(const char* vertexShaderSource, const char* fragmentShaderSource);
+  Shader(const char* vertexPath, const char* fragmentPath);
 
   GLuint program;  // ID программы
 
   void use();
+
+  GLuint compileShader(GLenum type, const GLchar* source);
 };
 
 #endif // !SHADER_H

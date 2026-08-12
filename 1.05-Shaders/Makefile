@@ -1,10 +1,10 @@
-CC=gcc
+CC=g++
 CFLAGS=-g -lglfw -lGLEW -lGL -lstdc++ -lm -Iinclude
 NAME=main
 SOURCES=src/main.cpp src/shader.cpp
 
 all:
-	$(CC) -o $(NAME) $(SOURCES) $(CFLAGS)
+	$(CC) $(SOURCES) -o $(NAME) $(CFLAGS)
 
 clean:
 	rm $(NAME)
