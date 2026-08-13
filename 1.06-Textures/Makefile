@@ -1,13 +1,27 @@
-CC=g++
-GLLIBS=-lglfw -lGLEW -lGL
-CLIBS=-lstdc++ -lm
-CFLAGS=-g -I../include $(CLIBS) $(GLLIBS)
-NAME=main
-SOURCES=src/main.cpp
+#SHELL = /bin/sh  # Типа обязательно должно быть
 
-all:
-	$(CC) $(SOURCES) -o $(NAME) $(CFLAGS)
+# Компилятор
+CC = g++
+# Библиотеки для OpenGL
+GLLIBS = -lGL -lglfw -lGLEW
+# Флаги компилятора
+CFLAGS = -g -I ../include
+# Флаги линкера
+LDFLAGS = -lstdc++ -lm $(GLLIBS)
+# Сурсы
+SOURCES = src/main.cpp
+
+#EXECUTABLE=main
+
+
+all: main
+
+main:
+	$(CC) $(SOURCES) $(CFLAGS) $(LDFLAGS) -o $@
 
 clean:
-	rm $(NAME)
+	rm main
+
+run:
+	./main
 
