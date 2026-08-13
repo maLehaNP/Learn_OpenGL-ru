@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
   std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &nrAttributes);
   std::cout << "Maximum texture size supported: " << nrAttributes << std::endl;
+  std::cout << '\n';
 
   // Вершины треугольника
   GLfloat vertices[] = {

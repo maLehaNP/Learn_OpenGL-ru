@@ -1,5 +1,7 @@
 CC=g++
-CFLAGS=-g -lglfw -lGLEW -lGL -lstdc++ -lm -I../include
+GLLIBS=-lglfw -lGLEW -lGL
+CLIBS=-lstdc++ -lm
+CFLAGS=-g -I../include $(CLIBS) $(GLLIBS)
 NAME=main
 SOURCES=src/main.cpp
 

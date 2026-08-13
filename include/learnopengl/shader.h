@@ -70,6 +70,8 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath) {
   // Удаляем шейдеры
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
+
+  printf("Shader program %2u done\n", program);
 }
 
 void Shader::use() {
@@ -82,19 +84,22 @@ GLuint Shader::compileShader(GLenum type, const GLchar* source) {
   glShaderSource(shader, 1, &source, NULL);
   glCompileShader(shader);
 
+  const char* typeName;
+  if (type == GL_VERTEX_SHADER)
+    typeName = "VERTEX";
+  else if (type == GL_FRAGMENT_SHADER)
+    typeName = "FRAGMENT";
+
   GLint success;
   GLchar infoLog[512];
   glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
   if (!success) {
     glGetShaderInfoLog(shader, 512, NULL, infoLog);
-
-    std::cout << "ERROR::SHADER::";
-    if (type == GL_VERTEX_SHADER)
-      std::cout << "VERTEX";
-    else if (type == GL_FRAGMENT_SHADER)
-      std::cout << "FRAGMENT";
-    std::cout << "::COMPILATION_FAILED\n" << infoLog << std::endl;
+    //std::cout << "ERROR::SHADER::" << typeName << "::COMPILATION_FAILED\n" << infoLog << std::endl;
+    printf("ERROR::SHADER::%s::COMPILATION_FAILED\n%s\n", typeName, infoLog);
   }
+
+  printf("Shader %2u ( %-8s ) compiled\n", shader, typeName);
 
   return shader;
 }
