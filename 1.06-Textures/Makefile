@@ -16,7 +16,7 @@ SOURCES = src/main.cpp
 
 all: main
 
-main:
+main: $(SOURCES)
 	$(CC) $(SOURCES) $(CFLAGS) $(LDFLAGS) -o $@
 
 clean:
