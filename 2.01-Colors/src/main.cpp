@@ -15,6 +15,8 @@
 #include <learnopengl/camera.h>
 #include "rendering.h"
 
+#define TIMES_SAMPLE_AMOUNT 120
+
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -164,36 +166,55 @@ int main(int argc, char *argv[]) {
 
   // Our state
   bool show_demo_window = false;
+
   double animTime = 0.;
   bool animateCubes = true;
+
+
+  // Доп. статистика кадра
+	double renderTime = 0.0;
+	int gpuTime = 0;
+
+	int times_offset = 0;
+	float delta_times[TIMES_SAMPLE_AMOUNT]{};
+	float render_times[TIMES_SAMPLE_AMOUNT]{};
+	float gpu_times[TIMES_SAMPLE_AMOUNT]{};
+
+	double deltaTimeSum = 0.0f;
+	double renderTimeSum = 0.0f;
+	double gpuTimeSum = 0.0f;
+
+	// GPU query
+	GLuint query;
+	glGenQueries(1, &query);
+	GLint queryRes = GL_TRUE;
+
 
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
   //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   // Игровой цикл
   while (!glfwWindowShouldClose(window)) {
+    double curTime = glfwGetTime();
+    deltaTime = curTime - prevTime;
+    prevTime  = curTime;
     updateFrameStat();
+
+		double renderStartTime = glfwGetTime();
+
+		double dTimeDelta = deltaTime * 1000. - delta_times[times_offset];
+		double rTimeDelta = renderTime * 1000. - render_times[times_offset];
+    double gTimeDelta = gpuTime / 1000000. - gpu_times[times_offset];
+		delta_times[times_offset] = deltaTime * 1000.0f;
+		render_times[times_offset] = renderTime * 1000.0f;
+		gpu_times[times_offset] = gpuTime / 1000000.;
+		times_offset = (times_offset + 1) % TIMES_SAMPLE_AMOUNT;
 
     glfwPollEvents();
     doMovement();  // Обрабатываем нажатые клавиши
 
-    // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    if (show_demo_window)
-      ImGui::ShowDemoWindow(); // Show demo window! :)
-
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-    {
-      ImGui::Begin("Hello, world!");
-      ImGui::Text(tmp);
-      ImGui::Checkbox("Animate cubes", &animateCubes);
-      ImGui::Checkbox("Demo Window", &show_demo_window);
-      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-      ImGui::End();
-    }
-
+		if (queryRes == GL_TRUE)
+		  glBeginQuery(GL_TIME_ELAPSED, query);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     shader.use();
@@ -224,6 +245,60 @@ int main(int argc, char *argv[]) {
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
     glBindVertexArray(0);
+
+
+		if (queryRes == GL_TRUE)
+		  glEndQuery(GL_TIME_ELAPSED);  // Просто запрос +0,01мс рендера
+
+    // Частые запросы результата бьют по процу (1мс рендера),
+    // поэтому нужно запрашивать его готовность
+		glGetQueryObjectiv(query, GL_QUERY_RESULT_AVAILABLE, &queryRes);
+		if (queryRes == GL_TRUE) {
+		  glGetQueryObjectiv(query, GL_QUERY_RESULT, &gpuTime);
+    }
+		//glGetQueryObjectiv(query, GL_QUERY_RESULT_NO_WAIT, &gpuTime);  // (requires OpenGL 4.4 or ARB_query_buffer_object)
+    //printf("gpuTime: %6d ns %f ms\n", gpuTime, gpuTime / 1000000.);  // Эта строчка добавляет 0.04 мс
+
+		double renderEndTime = glfwGetTime();
+		renderTime = renderEndTime - renderStartTime;
+    //printf("renderTime=%f\n", renderTime);
+
+
+    // Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    if (show_demo_window)
+      ImGui::ShowDemoWindow(); // Show demo window! :)
+
+    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+    {
+      ImGui::Begin("Hello, world!");
+      ImGui::Text(tmp);
+      ImGui::Checkbox("Animate cubes", &animateCubes);
+
+		  //float deltaTimeSum = 0.;
+      //float dTimeMax = 0.0;
+      //for (int i = 0; i < TIMES_SAMPLE_AMOUNT; i++) {
+      //  deltaTimeSum += delta_times[i];
+      //  dTimeMax = (delta_times[i] > dTimeMax) ? delta_times[i] : dTimeMax;
+      //}
+      deltaTimeSum += dTimeDelta;
+      renderTimeSum += rTimeDelta;
+      gpuTimeSum += gTimeDelta;
+
+		  char overlay[32];
+		  sprintf(overlay, "mov avg %f ms", deltaTimeSum / TIMES_SAMPLE_AMOUNT);
+		  ImGui::PlotLines("Frame Time", delta_times, TIMES_SAMPLE_AMOUNT, times_offset, overlay, 0.0f, 20.0f, ImVec2(0, 100));
+		  sprintf(overlay, "mov avg %f ms", renderTimeSum / TIMES_SAMPLE_AMOUNT);
+		  ImGui::PlotLines("Render Time", render_times, TIMES_SAMPLE_AMOUNT, times_offset, overlay, 0.0f, 2.0f, ImVec2(0, 100));
+		  sprintf(overlay, "mov avg %f ms", gpuTimeSum / TIMES_SAMPLE_AMOUNT);
+		  ImGui::PlotLines("GPU Time", gpu_times, TIMES_SAMPLE_AMOUNT, times_offset, overlay, 0.0f, 2.0f, ImVec2(0, 100));
+
+      ImGui::Checkbox("Demo Window", &show_demo_window);
+      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+      ImGui::End();
+    }
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -259,9 +334,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 }
 
 void updateFrameStat() {
-  double curTime = glfwGetTime();
-  deltaTime = curTime - prevTime;
-  prevTime  = curTime;
   updateCd -= deltaTime;
   if (updateCd <= 0.) {
     double fps = 1. / deltaTime;
