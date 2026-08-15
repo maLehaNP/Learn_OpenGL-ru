@@ -9,7 +9,7 @@ CFLAGS = -g -I ../include
 # Флаги линкера
 LDFLAGS = -lstdc++ -lm $(GLLIBS)
 # Сурсы
-SOURCES = src/main.cpp
+SOURCES = src/main.cpp src/camera.h
 
 #EXECUTABLE=main
 

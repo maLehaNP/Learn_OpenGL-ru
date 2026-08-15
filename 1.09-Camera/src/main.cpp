@@ -9,7 +9,7 @@
 #include <iostream>
 #include <math.h>
 #include <learnopengl/shader.h>
-//#include "camera.h"
+#include "camera.h"
 
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action,
@@ -51,7 +51,7 @@ GLfloat lastY = screenHeight / 2.0f;
 
 float fov = 45.0f;
 
-//Camera camera;
+Camera camera;
 
 
 
@@ -190,7 +190,9 @@ int main(int argc, char *argv[]) {
   glfwSetScrollCallback(window, scroll_callback);
 
 
-  //camera = Camera();
+  camera = Camera();
+  glfwSetCursorPosCallback(window, mouse_callback);
+  glfwSetScrollCallback(window, scroll_callback);
 
 
   glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -226,10 +228,15 @@ int main(int argc, char *argv[]) {
     view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     //view = glm::lookAt(cameraPos, cameraTarget, cameraUp);  // Смотрит в ноль
 
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-
     // Трансфокация
     projection = glm::perspective(glm::radians(fov), (GLfloat)screenWidth/(GLfloat)screenHeight, 0.1f, 100.0f);
+
+
+    // Класс камеры
+    view = camera.getViewMat();
+    projection = glm::perspective(glm::radians(camera.fov), (GLfloat)screenWidth/(GLfloat)screenHeight, 0.1f, 100.0f);
+
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 
@@ -275,12 +282,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
   //  cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 
   // Сохраняем инфу о нажатых клавишах
-  //if(action == GLFW_PRESS)
-  //  keys[key] = true;
-  //else if(action == GLFW_RELEASE)
-  //  keys[key] = false;
+  if(action == GLFW_PRESS)
+    keys[key] = true;
+  else if(action == GLFW_RELEASE)
+    keys[key] = false;
   // Мой вариант
-  keys[key] = (action == GLFW_PRESS) ? true : false;
+  //keys[key] = (action == GLFW_PRESS) ? true : false;  // Работает, только если ненадолго нажимать
 }
 
 void error_callback_glfw(int error, const char* description) {
@@ -365,6 +372,7 @@ void updateFrameStat() {
 void do_movement() {
   // Обновляем состояние клавиш
   //GLfloat cameraSpeed = 0.01f;
+  /*
   GLfloat cameraSpeed = 2.0f * deltaTime;  // Для скорости как предыдущей нужен множитель 0.6
   if(keys[GLFW_KEY_W])
   	cameraPos += cameraSpeed * cameraFront;
@@ -374,16 +382,17 @@ void do_movement() {
   	cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
   if(keys[GLFW_KEY_D])
   	cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+  */
 
   // С классом камеры
-  //if(keys[GLFW_KEY_W])
-  //  camara.processMove(FORWARD, deltaTime);
-  //if(keys[GLFW_KEY_S])
-  //  camara.processMove(BACKWARD, deltaTime);
-  //if(keys[GLFW_KEY_A])
-  //  camara.processMove(LEFT, deltaTime);
-  //if(keys[GLFW_KEY_D])
-  //  camara.processMove(RIGHT, deltaTime);
+  if(keys[GLFW_KEY_W])
+    camera.processMove(FORWARD, deltaTime);
+  if(keys[GLFW_KEY_S])
+    camera.processMove(BACKWARD, deltaTime);
+  if(keys[GLFW_KEY_A])
+    camera.processMove(LEFT, deltaTime);
+  if(keys[GLFW_KEY_D])
+    camera.processMove(RIGHT, deltaTime);
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
@@ -406,7 +415,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
   GLfloat yoffset = lastY - ypos;
   lastX = xpos;
   lastY = ypos;
-
+  /*
   GLfloat sensitivity = 0.05f;
   xoffset *= sensitivity;
   yoffset *= sensitivity;
@@ -425,14 +434,19 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
   front.y = sin(glm::radians(pitch));
   front.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
   cameraFront = glm::normalize(front);
+  */
+  camera.processMouse(xoffset, yoffset);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+  /*
   if(fov >= 1.0f && fov <= 45.0f)
   	fov -= yoffset;
   if(fov <= 1.0f)
   	fov = 1.0f;
   if(fov >= 45.0f)
   	fov = 45.0f;
+  */
+  camera.processScroll(xoffset, yoffset);
 }
 
