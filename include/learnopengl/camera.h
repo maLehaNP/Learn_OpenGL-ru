@@ -6,7 +6,9 @@ enum CameraMoveDir {
   FORWARD,
   BACKWARD,
   LEFT,
-  RIGHT
+  RIGHT,
+  UP,
+  DOWN
 };
 
 
@@ -64,6 +66,12 @@ public:
         break;
       case RIGHT:
   	    pos += right * velocity;
+        break;
+      case UP:
+  	    pos += up * velocity;
+        break;
+      case DOWN:
+  	    pos -= up * velocity;
         break;
       default:
         break;
