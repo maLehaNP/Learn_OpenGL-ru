@@ -80,12 +80,12 @@ int main(int argc, char *argv[]) {
 
   glEnable(GL_DEPTH_TEST);  // Включаем провеку глубины
 
-  Shader shader("shaders/shader.vert", "shaders/shader.frag");
+  Shader shader("shaders/shader.vert", "shaders/shader.frag", "Cube");
   GLuint texture = createTexture("../textures/container.jpg");
   GLuint texture2 = createTexture("../textures/awesomeface.png");
 
   // Куб
-  float vertices2[] = {
+  float vertices[] = {
       -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
        0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
@@ -124,12 +124,12 @@ int main(int argc, char *argv[]) {
       -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
   };
 
-  GLuint VBO2, VAO2;
-  glGenBuffers(1, &VBO2);
-  glGenVertexArrays(1, &VAO2);
-  glBindVertexArray(VAO2);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
+  GLuint VBO, VAO;
+  glGenBuffers(1, &VBO);
+  glGenVertexArrays(1, &VAO);
+  glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
@@ -162,6 +162,36 @@ int main(int argc, char *argv[]) {
   lastX = xpos;
   lastY = ypos;
   camera = Camera();
+
+
+  // VAO источника света
+  GLuint lightVAO;
+  glGenVertexArrays(1, &lightVAO);
+  glBindVertexArray(lightVAO);
+    // ! Так как VBO объекта-контейнера уже содержит все необходимые данные,
+    // то нам нужно только связать с ним новый VAO!
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+  glBindVertexArray(0);
+
+  // Шейдер освещенного куба
+  Shader lightingShader("shaders/lighting_shader.vert", "shaders/lighting_shader.frag", "Lighting");
+
+  lightingShader.use();
+  GLint objectColorLoc = glGetUniformLocation(lightingShader.program, "objectColor");
+  GLint lightColorLoc  = glGetUniformLocation(lightingShader.program, "lightColor");
+  glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
+  glUniform3f(lightColorLoc,  1.0f, 1.0f, 1.0f);  // зададим цвет источника света (белый)
+
+  // Шейдер источника света
+  Shader lampShader("shaders/lighting_shader.vert", "shaders/lamp_shader.frag", "Lamp");
+
+  // Координаты источника света
+  glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+
+  // Отводим немного камеру
+  camera.pos = glm::vec3(0.0f, 1.0f, 5.0f);
 
 
   // Our state
@@ -217,6 +247,7 @@ int main(int argc, char *argv[]) {
 		  glBeginQuery(GL_TIME_ELAPSED, query);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     shader.use();
 
     glm::mat4 view = camera.getViewMat();
@@ -224,12 +255,13 @@ int main(int argc, char *argv[]) {
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
+    /*
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, texture2);
     // Много кубов
-    glBindVertexArray(VAO2);
+    glBindVertexArray(VAO);
     for (int i = 0; i < 10; i++) {
       glm::mat4 model = glm::mat4(1.0f);
       model = glm::translate(model, cubePositions[i]);
@@ -245,6 +277,36 @@ int main(int argc, char *argv[]) {
       glDrawArrays(GL_TRIANGLES, 0, 36);
     }
     glBindVertexArray(0);
+    */
+
+
+    // Освещенный куб
+    //---------------
+    lightingShader.use();
+    glm::mat4 model = glm::mat4(1.0f);
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    glBindVertexArray(lightVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    //---------------
+
+    // Куб-лампа
+    //----------
+    model = glm::translate(model, lightPos);
+    model = glm::scale(model, glm::vec3(0.2f));
+
+    lampShader.use();
+
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+    glBindVertexArray(lightVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    //----------
 
 
 		if (queryRes == GL_TRUE)
@@ -294,6 +356,13 @@ int main(int argc, char *argv[]) {
 		  ImGui::PlotLines("Render Time", render_times, TIMES_SAMPLE_AMOUNT, times_offset, overlay, 0.0f, 2.0f, ImVec2(0, 100));
 		  sprintf(overlay, "mov avg %f ms", gpuTimeSum / TIMES_SAMPLE_AMOUNT);
 		  ImGui::PlotLines("GPU Time", gpu_times, TIMES_SAMPLE_AMOUNT, times_offset, overlay, 0.0f, 2.0f, ImVec2(0, 100));
+
+      ImGui::Text("Camera:");
+      ImGui::Text("  pos   (%.2f %.2f %.2f)", camera.pos.x, camera.pos.y, camera.pos.z);
+      ImGui::Text("  front (%.2f %.2f %.2f)", camera.front.x, camera.front.y, camera.front.z);
+      ImGui::Text("  pitch %.2f", camera.pitch);
+      ImGui::Text("  yaw   %.2f", camera.yaw);
+      ImGui::Text("  FOV   %.2f", camera.fov);
 
       ImGui::Checkbox("Demo Window", &show_demo_window);
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);

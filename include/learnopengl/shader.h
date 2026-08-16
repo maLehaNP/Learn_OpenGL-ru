@@ -9,9 +9,10 @@
 
 class Shader {
 public:
-  Shader(const char* vertexPath, const char* fragmentPath);
+  Shader(const char* vertexPath, const char* fragmentPath, const char* shaderName);
 
-  GLuint program;  // ID программы
+  GLuint program;     // ID программы
+  const char* name;  // Наименование шейдера
 
   void use();
 
@@ -21,7 +22,7 @@ public:
 };
 
 
-Shader::Shader(const char* vertexPath, const char* fragmentPath) {
+Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* name = "") : name(name) {
   const GLchar* vertexShaderSource;
   const GLchar* fragmentShaderSource;
 
@@ -73,7 +74,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath) {
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
 
-  printf("[+] Shader program %2u done\n", program);
+  printf("[+] Shader program %s (%u) linked\n", name, program);
 }
 
 void Shader::use() {
@@ -101,7 +102,7 @@ GLuint Shader::compileShader(GLenum type, const GLchar* source) {
     printf("ERROR::SHADER::%s::COMPILATION_FAILED\n%s\n", typeName, infoLog);
   }
 
-  printf("[+] Shader %2u ( %-8s ) compiled\n", shader, typeName);
+  printf("[+] Shader %u (%s) compiled\n", shader, typeName);
 
   return shader;
 }
