@@ -2,6 +2,7 @@
 #define SHADER_H
 
 #include <GL/glew.h>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -19,6 +20,9 @@ public:
   GLuint compileShader(GLenum type, const GLchar* source);
 
   void setInt(const GLchar* name, GLint v0);
+  void setFloat(const GLchar* name, GLfloat v0);
+  void setFloat3(const GLchar* name, GLfloat v0, GLfloat v1, GLfloat v2);
+  void setVec3(const GLchar* name, glm::vec3 vec);
 };
 
 
@@ -109,6 +113,18 @@ GLuint Shader::compileShader(GLenum type, const GLchar* source) {
 
 void Shader::setInt(const GLchar* name, GLint v0) {
   glUniform1i(glGetUniformLocation(program, name), v0);
+}
+
+void Shader::setFloat(const GLchar* name, GLfloat v0) {
+  glUniform1f(glGetUniformLocation(program, name), v0);
+}
+
+void Shader::setFloat3(const GLchar* name, GLfloat v0, GLfloat v1, GLfloat v2) {
+  glUniform3f(glGetUniformLocation(program, name), v0, v1, v2);
+}
+
+void Shader::setVec3(const GLchar* name, glm::vec3 vec) {
+  glUniform3f(glGetUniformLocation(program, name), vec.x, vec.y, vec.z);
 }
 
 #endif // !SHADER_H
